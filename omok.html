@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      :root {
+        --color-board-bg: #ddbe97;
+        --color-board-line: #444;
+        --color-stone-black: #202020;
+        --color-stone-white: #fafafa;
+        --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        padding-top: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+      #board {
+        --size: 480px;
+        padding: 15px;
+
+        width: var(--size);
+        height: var(--size);
+        background-color: var(--color-board-bg);
+        box-shadow: var(--box-shadow);
+        border-radius: 3px;
+
+        display: grid;
+        align-items: center;
+        justify-items: center;
+        grid-template-columns: repeat(15, 1fr);
+        grid-template-rows: repeat(15, 1fr);
+
+        .vline {
+          grid-row: 1/16;
+
+          width: 2px;
+          height: calc(100% - var(--size) / 15 + 1px);
+          background-color: var(--color-board-line);
+        }
+
+        .hline {
+          grid-column: 1/16;
+          width: calc(100% - var(--size) / 15 + 1px);
+          height: 2px;
+          background-color: var(--color-board-line);
+        }
+        .dot {
+          width: 8px;
+          height: 8px;
+          background-color: var(--color-board-line);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>오목 게임</h1>
+    <div id="board"></div>
+    <script>
+      const SIZE = 15;
+      const board = document.querySelector('#board');
+      init();
+
+      function init() {
+        for (let i = 0; i < SIZE; i++) {
+          const vline = document.createElement('div');
+          vline.className = 'vline';
+          vline.style.gridColumn = i + 1;
+          board.appendChild(vline);
+
+          const hline = document.createElement('div');
+          hline.className = 'hline';
+          hline.style.gridRow = i + 1;
+          board.appendChild(hline);
+        }
+
+        for (const [row, col] of [
+          [3, 3],
+          [3, 11],
+          [11, 11],
+          [11, 3],
+        ]) {
+          const dot = document.createElement('div');
+          dot.className = 'dot';
+          dot.style.gridRow = row + 1;
+          dot.style.gridColumn = col + 1;
+          board.appendChild(dot);
+        }
+      }
+    </script>
+  </body>
+</html>
