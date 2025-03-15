@@ -39,6 +39,14 @@
         }
       }
 
+      #winner {
+        display: flex;
+        justify-content: center;
+        span {
+          font-size: 30px;
+        }
+      }
+
       #board {
         padding: 15px;
 
@@ -95,15 +103,15 @@
         .stone.white {
           background-color: var(--color-stone-white);
         }
+
+        .stone.placed {
+          opacity: 1;
+        }
       }
       #board.playing {
         .stone:hover:not(.placed) {
           opacity: 0.6;
           cursor: pointer;
-        }
-
-        .stone.placed {
-          opacity: 1;
         }
       }
       #board.playing.black {
@@ -126,6 +134,10 @@
       <button id="play" onclick="init()">play</button>
     </div>
     <div id="board"></div>
+
+    <p id="winner" style="display: none">
+      <span>승리자 !!</span>
+    </p>
     <script>
       const Color = {
         BLACK: 'black',
@@ -135,6 +147,7 @@
       const board = document.querySelector('#board');
       const playBtn = document.querySelector('button#play');
       const labelTurn = document.querySelector('#turn');
+      const winner = document.querySelector('#winner');
 
       const stones = Array(SIZE)
         .fill(null)
@@ -190,10 +203,17 @@
 
       function play() {
         playing = true;
+
         changeTurn(Color.BLACK);
         board.classList.add('playing');
         playBtn.setAttribute('disabled', '');
         playBtn.textContent = 'playing';
+
+        for (const stone of board.querySelectorAll('.stone.placed')) {
+          stone.classList.remove('placed');
+          stone.classList.remove(Color.BLACK);
+          stone.classList.remove(Color.WHITE);
+        }
       }
 
       function stop() {
@@ -201,6 +221,8 @@
         board.classList.remove('playing');
         playBtn.removeAttribute('disabled');
         playBtn.textContent = 'play';
+        winner.style.display = 'block';
+        winner.textContent = `${turn}가 이겼다`;
       }
 
       function changeTurn(color) {
@@ -219,9 +241,19 @@
         stone.classList.add('placed');
         stone.classList.add(turn);
 
+        if (checkOmok(row, col)) {
+          window.alert(`${turn}이 이겼다`);
+          console.log(playing);
+          stop();
+          return;
+        }
+
         if (turn === Color.BLACK) turn = Color.WHITE;
         else turn = Color.BLACK;
         changeTurn(turn === Color.BLACK ? Color.BLACK : Color.WHITE);
+      }
+      function checkOmok(row, col) {
+        return Math.random() > 0.7;
       }
     </script>
   </body>
