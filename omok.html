@@ -6,6 +6,7 @@
     <title>Document</title>
     <style>
       :root {
+        --size: 480px;
         --color-board-bg: #ddbe97;
         --color-board-line: #444;
         --color-stone-black: #202020;
@@ -23,8 +24,22 @@
         align-items: center;
         gap: 20px;
       }
+      #controls {
+        display: flex;
+        justify-content: space-between;
+        width: var(--size);
+        align-items: center;
+
+        button {
+          font-size: 16px;
+          padding: 3px 5px;
+        }
+        span {
+          font-size: 20px;
+        }
+      }
+
       #board {
-        --size: 480px;
         padding: 15px;
 
         width: var(--size);
@@ -58,18 +73,80 @@
           height: 8px;
           background-color: var(--color-board-line);
         }
+
+        .stone {
+          width: calc(100% - 4px);
+          height: calc(100% - 4px);
+          border-radius: 50%;
+
+          box-shadow: var(--box-shadow);
+
+          opacity: 0;
+        }
+        .stone:hover {
+          opacity: 0.7;
+          background-color: var(--color-stone-white);
+          cursor: pointer;
+        }
+
+        .stone.black {
+          background-color: var(--color-stone-black);
+        }
+        .stone.white {
+          background-color: var(--color-stone-white);
+        }
+      }
+      #board.playing {
+        .stone:hover:not(.placed) {
+          opacity: 0.6;
+          cursor: pointer;
+        }
+
+        .stone.placed {
+          opacity: 1;
+        }
+      }
+      #board.playing.black {
+        .stone:hover:not(.placed) {
+          background-color: var(--color-stone-black);
+        }
+      }
+
+      #board.playing.white {
+        .stone:hover:not(.placed) {
+          background-color: var(--color-stone-white);
+        }
       }
     </style>
   </head>
   <body>
     <h1>오목 게임</h1>
+    <div id="controls">
+      <p>turn: <span id="turn">black</span></p>
+      <button id="play" onclick="init()">play</button>
+    </div>
     <div id="board"></div>
     <script>
+      const Color = {
+        BLACK: 'black',
+        WHITE: 'white',
+      };
       const SIZE = 15;
       const board = document.querySelector('#board');
+      const playBtn = document.querySelector('button#play');
+      const labelTurn = document.querySelector('#turn');
+
+      const stones = Array(SIZE)
+        .fill(null)
+        .map((_) => Array(SIZE));
+
+      let turn = Color.BLACK;
+
+      let playing = false;
       init();
 
       function init() {
+        console.log('시작');
         for (let i = 0; i < SIZE; i++) {
           const vline = document.createElement('div');
           vline.className = 'vline';
@@ -94,6 +171,57 @@
           dot.style.gridColumn = col + 1;
           board.appendChild(dot);
         }
+
+        for (let row = 0; row < SIZE; row++) {
+          for (let col = 0; col < SIZE; col++) {
+            const stone = document.createElement('div');
+            stone.className = 'stone';
+            stone.style.gridRow = row + 1;
+            stone.style.gridColumn = col + 1;
+            stone.addEventListener('click', () => place(row, col));
+            board.appendChild(stone);
+            stones[row][col] = stone;
+          }
+        }
+        console.log(stones);
+        playBtn.addEventListener('click', play);
+        // play();
+      }
+
+      function play() {
+        playing = true;
+        changeTurn(Color.BLACK);
+        board.classList.add('playing');
+        playBtn.setAttribute('disabled', '');
+        playBtn.textContent = 'playing';
+      }
+
+      function stop() {
+        playing = false;
+        board.classList.remove('playing');
+        playBtn.removeAttribute('disabled');
+        playBtn.textContent = 'play';
+      }
+
+      function changeTurn(color) {
+        turn = color;
+        board.classList.remove(Color.BLACK);
+        board.classList.remove(Color.WHITE);
+        board.classList.add(turn);
+        labelTurn.innerHTML = `${color}`;
+      }
+
+      function place(row, col) {
+        if (!playing) return;
+
+        const stone = stones[row][col];
+        if (stone.classList.contains('placed')) return;
+        stone.classList.add('placed');
+        stone.classList.add(turn);
+
+        if (turn === Color.BLACK) turn = Color.WHITE;
+        else turn = Color.BLACK;
+        changeTurn(turn === Color.BLACK ? Color.BLACK : Color.WHITE);
       }
     </script>
   </body>
