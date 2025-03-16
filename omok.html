@@ -29,6 +29,7 @@
         justify-content: space-between;
         width: var(--size);
         align-items: center;
+        gap: 10px;
 
         button {
           font-size: 16px;
@@ -36,6 +37,9 @@
         }
         span {
           font-size: 20px;
+        }
+        p {
+          flex-grow: 1;
         }
       }
 
@@ -86,6 +90,11 @@
           width: calc(100% - 4px);
           height: calc(100% - 4px);
           border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-weight: bold;
+          color: red;
 
           box-shadow: var(--box-shadow);
 
@@ -125,19 +134,29 @@
           background-color: var(--color-stone-white);
         }
       }
+      #board.history {
+        .stone.black {
+          color: var(--color-stone-black);
+        }
+        .stone.white {
+          color: var(--color-stone-white);
+        }
+      }
     </style>
   </head>
   <body>
-    <h1>오목 게임</h1>
+    <h1>오목</h1>
     <div id="controls">
       <p>turn: <span id="turn">black</span></p>
       <button id="play" onclick="init()">play</button>
+      <button id="history">history</button>
     </div>
-    <div id="board"></div>
+    <div id="board" class="history"></div>
 
     <p id="winner" style="display: none">
       <span>승리자 !!</span>
     </p>
+
     <script>
       const Color = {
         BLACK: 'black',
@@ -145,6 +164,7 @@
       };
       const SIZE = 15;
       const board = document.querySelector('#board');
+      const btnHistory = document.querySelector('button#history');
       const playBtn = document.querySelector('button#play');
       const labelTurn = document.querySelector('#turn');
       const winner = document.querySelector('#winner');
@@ -152,14 +172,13 @@
       const stones = Array(SIZE)
         .fill(null)
         .map((_) => Array(SIZE));
-
+      let counter = 1;
       let turn = Color.BLACK;
 
       let playing = false;
       init();
 
       function init() {
-        console.log('시작');
         for (let i = 0; i < SIZE; i++) {
           const vline = document.createElement('div');
           vline.className = 'vline';
@@ -196,13 +215,23 @@
             stones[row][col] = stone;
           }
         }
-        console.log(stones);
         playBtn.addEventListener('click', play);
-        // play();
+        document.addEventListener('keydown', ({ key }) => {
+          if (key === 'R') {
+            stop();
+            play();
+          } else if (key === 't') {
+            changeTurn(Color.BLACK);
+          }
+        });
       }
+      btnHistory.addEventListener('click', () => {
+        board.classList.toggle('history');
+      });
 
       function play() {
         playing = true;
+        counter = 1;
 
         changeTurn(Color.BLACK);
         board.classList.add('playing');
@@ -227,6 +256,7 @@
 
       function changeTurn(color) {
         turn = color;
+        console.log(turn);
         board.classList.remove(Color.BLACK);
         board.classList.remove(Color.WHITE);
         board.classList.add(turn);
@@ -240,10 +270,11 @@
         if (stone.classList.contains('placed')) return;
         stone.classList.add('placed');
         stone.classList.add(turn);
+        stone.textContent = counter++;
 
         if (checkOmok(row, col)) {
           window.alert(`${turn}이 이겼다`);
-          console.log(playing);
+          // console.log(playing);
           stop();
           return;
         }
@@ -253,7 +284,39 @@
         changeTurn(turn === Color.BLACK ? Color.BLACK : Color.WHITE);
       }
       function checkOmok(row, col) {
-        return Math.random() > 0.7;
+        // if (count(0, 1) + count(0, -1) + 1 === 5) return true;
+        // if (count(1, 0) + count(-1, 0) + 1 === 5) return true;
+        // if (count(1, 1) + count(-1, 1) + 1 === 5) return true;
+        // if (count(1, -1) + count(1, 1) + 1 === 5) return true;
+        return (
+          count(0, 1) + count(0, -1) === 4 ||
+          count(1, 0) + count(-1, 0) === 4 ||
+          count(1, 1) + count(-1, -1) === 4 ||
+          count(1, -1) + count(-1, 1) === 4
+        );
+        function count(up, down) {
+          let num = 0;
+          let r = row + up;
+          let c = col + down;
+
+          while (true) {
+            if (checkOutOfBoard(row, col)) return num;
+
+            const stone = stones[r][c];
+            if (stone.classList.contains(turn)) {
+              num++;
+              c += down;
+              r += up;
+              continue;
+            }
+            break;
+          }
+          return num;
+        }
+      }
+
+      function checkOutOfBoard(row, col) {
+        return row < 0 || row >= SIZE || col < 0 || col >= SIZE;
       }
     </script>
   </body>
