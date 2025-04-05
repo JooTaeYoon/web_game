@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      :root {
+        --color-text: #533;
+        --color-bg: #f4f1ed;
+        --color-apple-bg-selected: #057beb;
+        --color-apple-icon: #e21b1b;
+        --color-apple-icon-selected: #f3e047;
+        --color-board-border: #d49c42;
+        --color-board-bg: #f3e047;
+
+        --num-row: 5;
+        --num-col: 8;
+        --board-width: 500px;
+        --apple-size: calc(500px / var(--num-col));
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        font-family: monospace;
+      }
+
+      body {
+        padding-top: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        background-color: var(--color-bg);
+      }
+
+      #board {
+        /* width: 500px; */
+        /* height: 300px; */
+        display: grid;
+        grid-template-columns: repeat(var(--num-col), var(--apple-size));
+        grid-template-rows: repeat(var(--num-row), var(--apple-size));
+        border: 8px solid var(--color-board-border);
+        border-radius: 12px;
+        background-color: var(--color-board-bg);
+        padding: 15px;
+
+        * {
+          user-select: none;
+        }
+
+        .apple {
+          position: relative;
+          span {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            color: white;
+            z-index: 1;
+            font-size: 18px;
+            font-weight: bold;
+            transform: translateY(10%);
+          }
+          svg {
+            margin: 2px;
+            width: calc(100% - 4px);
+            height: calc(100% - 4px);
+          }
+          path {
+            fill: var(--color-apple-icon);
+          }
+        }
+
+        .apple:hover {
+          cursor: crosshair;
+        }
+
+        .apple.selected {
+          cursor: crosshair;
+          background-color: var(--color-apple-bg-selected);
+          path {
+            fill: var(--color-apple-icon-selected);
+          }
+          span {
+            color: black;
+          }
+        }
+        .apple.collected {
+          svg {
+            opacity: 0;
+            transform: scale(2);
+            transition: opacity 300ms, transform 300ms;
+          }
+          span {
+            opacity: 0.3;
+            transition: opacity 300ms;
+          }
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>apple game</h1>
+    <div id="board"></div>
+    <svg
+      id="apple-icon"
+      version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 512 512"
+      xml:space="preserve"
+    >
+      <path
+        style="fill: #6b6b6b"
+        d="M110.291,16.528c0,0,105.156-28.254,133.495,65.21C243.785,81.738,170.185,125.652,110.291,16.528z"
+      />
+      <path
+        d="M238.343,169.456c-1.457-3.58-34.538-88.393,45.793-169.456l22.745,22.534c-65.016,65.614-39.904,132.172-38.809,134.969	L238.343,169.456z"
+      />
+      <path
+        d="M360.196,109.621c-55.927,2.03-87.668,36.526-104.171,36.526s-48.244-34.496-104.171-36.526	C95.928,107.591,0.021,149.728,0.021,279.254S104.209,512,157.549,512s71.915-15.163,98.451-15.163S301.085,512,354.451,512	s157.528-103.227,157.528-232.746S416.123,107.591,360.196,109.621z"
+      />
+    </svg>
+
+    <!--  -->
+    <br />
+    <hr />
+
+    <div style="border: 1px solid red; width: 100px; height: 100px">
+      <div
+        style="
+          position: relative;
+          width: 100%;
+          height: 100%;
+          border: 1px solid blue;
+        "
+      >
+        <span
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+          "
+          >테스트</span
+        >
+      </div>
+    </div>
+  </body>
+
+  <script>
+    const root = document.querySelector(':root');
+    const styles = window.getComputedStyle(root);
+    const rows = styles.getPropertyValue('--num-row');
+    const cols = styles.getPropertyValue('--num-col');
+    const $appleIcon = document.querySelector('#apple-icon');
+    const apples = [];
+    let dragging = false;
+    let pos1 = [];
+    let pos2 = [];
+
+    const board = document.querySelector('#board');
+
+    init();
+
+    function init() {
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const div = document.createElement('div');
+          const icon = document.importNode($appleIcon, true);
+          icon.removeAttribute('id');
+          div.className = 'apple';
+          const number = document.createElement('span');
+          number.textContent = Math.floor(Math.random() * 9 + 1);
+
+          div.addEventListener('mousedown', () => {
+            dragBegin(r, c);
+          });
+          div.addEventListener('mousemove', () => {
+            dragMove(r, c);
+          });
+          div.addEventListener('mouseup', dragEnd);
+          div.appendChild(number);
+          div.appendChild(icon);
+          apples.push(div);
+          board.appendChild(div);
+        }
+      }
+      $appleIcon.remove();
+    }
+    function dragBegin(row, col) {
+      dragging = true;
+      pos1 = [row, col];
+      pos2 = [row, col];
+      drawSelection();
+    }
+    function dragMove(row, col) {
+      if (!dragging) {
+        return;
+      }
+      pos2 = [row, col];
+      drawSelection();
+    }
+    function dragEnd() {
+      dragging = false;
+      collect();
+      clear();
+    }
+
+    function collect() {
+      let sum = 0;
+      for (const apple of board.querySelectorAll('.apple.selected')) {
+        sum += Number(apple.textContent);
+      }
+
+      if (sum !== 10) return;
+      for (const apple of board.querySelectorAll('.apple.selected')) {
+        apple.classList.add('collected');
+      }
+    }
+
+    function clear() {
+      for (const apple of board.querySelectorAll('.apple.selected')) {
+        apple.classList.remove('selected');
+      }
+    }
+
+    function drawSelection() {
+      clear();
+      const minRow = Math.min(pos1[0], pos2[0]);
+      const maxRow = Math.max(pos1[0], pos2[0]);
+      const minCol = Math.min(pos1[1], pos2[1]);
+      const maxCol = Math.max(pos1[1], pos2[1]);
+
+      for (let i = minRow; i <= maxRow; i++) {
+        for (let j = minCol; j <= maxCol; j++) {
+          const apple = apples[i * cols + j];
+          apple.classList.add('selected');
+        }
+      }
+    }
+  </script>
+</html>
