@@ -14,7 +14,7 @@
         --color-board-border: #d49c42;
         --color-board-bg: #f3e047;
 
-        --num-row: 5;
+        --num-row: 7;
         --num-col: 8;
         --board-width: 500px;
         --apple-size: calc(500px / var(--num-col));
@@ -104,10 +104,105 @@
           }
         }
       }
+
+      #controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--board-width);
+        gap: 15px;
+
+        #score {
+          position: relative;
+        }
+
+        span {
+          position: absolute;
+          left: 0;
+          top: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+          color: white;
+          font-size: 20px;
+          font-weight: bold;
+          flex-shrink: 0;
+          transform: translateY(5%);
+        }
+
+        > div svg {
+          width: 50px;
+          height: 50px;
+          path {
+            fill: var(--color-apple-icon);
+          }
+        }
+
+        #progress {
+          flex-shrink: 1;
+          width: 100%;
+          height: 24px;
+          background-color: var(--color-text);
+          border-radius: 8px;
+
+          > div {
+            width: 80%;
+            height: 100%;
+            background-color: var(--color-board-bg);
+            border-radius: 8px;
+          }
+        }
+      }
+      #start {
+        flex-shrink: 0;
+        background-color: var(--color-text);
+        border-radius: 8px;
+        font-size: 20px;
+        color: white;
+        padding: 5px;
+      }
+      .btn_start {
+        transform: scale(2);
+        transition: transform 300ms;
+      }
+      .btn_end {
+        transform: scale(1);
+        transition: transform 300ms;
+      }
     </style>
   </head>
   <body>
     <h1>apple game</h1>
+    <div id="controls">
+      <div id="score">
+        <svg
+          id="appleIcon"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 512 512"
+          xml:space="preserve"
+        >
+          <path
+            style="fill: #6b6b6b"
+            d="M110.291,16.528c0,0,105.156-28.254,133.495,65.21C243.785,81.738,170.185,125.652,110.291,16.528z"
+          />
+          <path
+            d="M238.343,169.456c-1.457-3.58-34.538-88.393,45.793-169.456l22.745,22.534c-65.016,65.614-39.904,132.172-38.809,134.969	L238.343,169.456z"
+          />
+          <path
+            d="M360.196,109.621c-55.927,2.03-87.668,36.526-104.171,36.526s-48.244-34.496-104.171-36.526	C95.928,107.591,0.021,149.728,0.021,279.254S104.209,512,157.549,512s71.915-15.163,98.451-15.163S301.085,512,354.451,512	s157.528-103.227,157.528-232.746S416.123,107.591,360.196,109.621z"
+          />
+        </svg>
+        <span>100</span>
+      </div>
+      <div id="progress">
+        <div></div>
+      </div>
+      <button id="start">start</button>
+    </div>
+
     <div id="board"></div>
     <svg
       id="apple-icon"
@@ -171,6 +266,15 @@
 
     const board = document.querySelector('#board');
 
+    const btn = document.querySelector('#start');
+    btn.addEventListener('click', () => {
+      btn.className = 'btn_start';
+      setTimeout(() => {
+        btn.classList.remove('btn_start');
+        btn.className = 'btn_end';
+      }, 300);
+    });
+
     init();
 
     function init() {
@@ -220,10 +324,12 @@
     function collect() {
       let sum = 0;
       for (const apple of board.querySelectorAll('.apple.selected')) {
-        sum += Number(apple.textContent);
+        if (apple.className !== 'apple collected selected')
+          sum += Number(apple.textContent);
       }
 
       if (sum !== 10) return;
+
       for (const apple of board.querySelectorAll('.apple.selected')) {
         apple.classList.add('collected');
       }
