@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      :root {
+        --board-color: #deb887;
+        --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        --size: 480px;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        display: flex;
+        height: 100vh; /* 화면 전체 높이 차지 */
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+      }
+      .board {
+        width: 800px;
+        height: 800px;
+        background-color: var(--board-color);
+        display: grid;
+        grid-template-columns: repeat(15, 1fr);
+        grid-template-rows: repeat(15, 1fr);
+        padding: 50px;
+        justify-items: center;
+        align-items: center;
+      }
+      .vline {
+        grid-row: 1/16;
+        background-color: black;
+        width: 3px;
+        height: calc(100% - var(--size) / 15);
+        grid-column: 2;
+      }
+      .hline {
+        grid-column: 1/16;
+        grid-row: 2;
+        background-color: black;
+        width: calc(100% - var(--size) / 15);
+        height: 3px;
+      }
+      .stone {
+        background-color: white;
+        width: calc(100% - 4px);
+        height: calc(100% - 4px);
+        border-radius: 50px;
+        justify-self: center;
+        align-self: center;
+        box-shadow: var(--box-shadow);
+        opacity: 0;
+      }
+      .stone.placed {
+        opacity: 1;
+        transition: opacity 0.1s ease;
+      }
+      .stone:hover {
+        opacity: 0.3;
+        cursor: pointer;
+      }
+      .stone.black:not(.white) {
+        background-color: black;
+      }
+      .stone.white:not(.black) {
+        background-color: white;
+      }
+      .spot {
+        width: 10px;
+        height: 10px;
+        border-radius: 4px;
+        background-color: black;
+      }
+      .chattingbox {
+        width: 50%;
+        height: 150px;
+        box-sizing: border-box;
+        display: flex;
+        /* gap: 10px; */
+      }
+
+      .chat-log {
+        width: 100%;
+        height: 150px;
+        border: 1px solid #ccc;
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        box-sizing: border-box;
+        overflow-y: auto;
+      }
+      .message {
+        padding: 5px 10px;
+        border-radius: 10px;
+        max-width: 80%;
+        word-break: break-word;
+      }
+
+      .message.me {
+        background-color: #d1e7dd;
+        align-self: flex-end;
+      }
+
+      .message.other {
+        background-color: #f8d7da;
+        align-self: flex-start;
+      }
+    </style>
+    <title>Document</title>
+  </head>
+  <body>
+    <div>
+      <h1>누구 차례? <span class="turnCheck"></span></h1>
+    </div>
+    <div class="board"></div>
+    <div class="chattingbox">
+      <div class="chat-log"></div>
+      <div>
+        <input type="text" class="chatbox" />
+        <button class="btn">전송</button>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script>
+      const socket = new SockJS('http://localhost:8080/ws');
+      const stompClient = Stomp.over(socket);
+      stompClient.debug = null;
+
+      const $board = document.querySelector('.board');
+      const $btn = document.querySelector('.btn');
+      const $input = document.querySelector('input.chatbox');
+
+      let winCheck = false;
+
+      const $stones = Array(15)
+        .fill(null)
+        .map(() => Array(15).fill(null));
+      const COLOR = {
+        BLACK: 'black',
+        WHITE: 'white',
+      };
+      let $player;
+      let $rival;
+      let position = [];
+      let sessionId = '';
+      let turn = COLOR.BLACK;
+      let myTurn = false;
+
+      init();
+
+      function init() {
+        for (let i = 0; i < 15; i++) {
+          const vdiv = document.createElement('div');
+          vdiv.className = 'vline';
+          vdiv.style.gridColumn = i + 1;
+          $board.appendChild(vdiv);
+
+          const hdiv = document.createElement('div');
+          hdiv.className = 'hline';
+          hdiv.style.gridRow = i + 1;
+          $board.appendChild(hdiv);
+        }
+
+        for (const [x, y] of [
+          [3, 3],
+          [3, 11],
+          [11, 11],
+          [11, 3],
+        ]) {
+          const spot = document.createElement('div');
+          spot.className = 'spot';
+          spot.style.gridColumn = x + 1;
+          spot.style.gridRow = y + 1;
+          $board.appendChild(spot);
+        }
+
+        for (let i = 0; i < 15; i++) {
+          for (let j = 0; j < 15; j++) {
+            const $stone = document.createElement('div');
+            $stone.className = 'stone';
+            $stone.style.gridColumn = i + 1;
+            $stone.style.gridRow = j + 1;
+            $stones[i][j] = $stone;
+            $stone.addEventListener('click', () => place(i, j));
+
+            $board.appendChild($stone);
+          }
+        }
+
+        stompClient.connect({}, function (frame) {
+          const url = stompClient.ws._transport.url;
+          sessionId = /\/([^\/]+)\/websocket/.exec(url)[1]; // 세션 ID 추출
+
+          $player = sessionId;
+
+          myTurn = true; // 기본 true로 해놓고
+          if ($rival && sessionId > $rival) {
+            myTurn = false;
+          }
+
+          updateCursor();
+
+          stompClient.subscribe('/topic/chat', function (chat) {
+            const payload = JSON.parse(chat.body);
+            const { message, senderSessionId } = payload;
+
+            const div = document.createElement('div');
+            div.classList.add('message');
+            div.textContent = message;
+
+            if (senderSessionId === sessionId) {
+              div.classList.add('me');
+            } else {
+              div.classList.add('other');
+            }
+
+            const log = document.querySelector('.chat-log');
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight; // 자동 스크롤
+          });
+
+          stompClient.subscribe('/topic/others', function (messageOutput) {
+            const payload = JSON.parse(messageOutput.body);
+            $rival = payload.sessionId;
+            playerCheck(payload);
+          });
+        });
+
+        $btn.addEventListener('click', () => {
+          chatting();
+        });
+
+        $input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') chatting();
+        });
+      }
+
+      function updateCursor() {
+        const $turnCheck = document.querySelector('.turnCheck');
+        if (myTurn) {
+          $board.style.cursor = 'auto';
+          $board.style.pointerEvents = 'auto';
+          $turnCheck.textContent = '내 차례';
+        } else {
+          $board.style.cursor = 'none';
+          $board.style.pointerEvents = 'none';
+          $turnCheck.textContent = '상대방 차례';
+        }
+      }
+
+      function playerCheck(payload) {
+        const { x, y, sessionId: senderId } = payload;
+        if (senderId !== sessionId) {
+          renderStone(x, y, turn);
+          turn = turnCheck(turn);
+          myTurn = true;
+        } else {
+          myTurn = false;
+        }
+
+        updateCursor();
+      }
+      function renderStone(x, y, color) {
+        $stones[x][y].classList.add(color, 'placed');
+      }
+
+      function turnCheck(turn) {
+        return turn === COLOR.BLACK ? COLOR.WHITE : COLOR.BLACK;
+      }
+
+      function win(x, y, stone) {
+        const direction = [
+          [1, 0],
+          [0, 1],
+          [1, 1],
+          [1, -1],
+        ];
+      }
+
+      function inRange(x, y) {
+        return 0 <= x && x <= 15 && 0 <= y && y <= 15;
+      }
+
+      function place(x, y) {
+        if (!myTurn) return;
+        if ($stones[x][y].classList.contains('placed')) return;
+
+        if (win()) return;
+
+        renderStone(x, y, turn);
+        stompClient.send('/app/send', {}, JSON.stringify({ x, y, sessionId }));
+
+        turn = turnCheck(turn);
+        myTurn = false;
+
+        updateCursor();
+      }
+
+      function chatting() {
+        const message = $input.value;
+        const senderSessionId = sessionId;
+        const payload = { message, senderSessionId };
+        stompClient.send('/app/chat', {}, JSON.stringify(payload));
+        $input.value = '';
+      }
+    </script>
+  </body>
+</html>
