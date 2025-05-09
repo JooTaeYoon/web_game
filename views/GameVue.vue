@@ -35,7 +35,7 @@
             gridColumn: j,
             zIndex: 1,
           }"
-          @click="placeStone(i - 1, j - 1)"
+          @click="handleClick(i - 1, j - 1)"
         ></div>
       </template>
     </div>
@@ -56,6 +56,7 @@ export default {
       client: null,
       turn: 'black',
       sessionId: '',
+      color: '',
     };
   },
   mounted() {
@@ -81,28 +82,52 @@ export default {
         headers: { 'content-type': 'application/json' },
       });
 
-      this.client.subscribe(`/room/api/subscribe`, (message) => {
+      this.client.subscribe(`/user/room/api/init`, (message) => {
         const body = JSON.parse(message.body);
         this.sessionId = body.sessionId;
+        this.color = body.color;
+        this.turn = body.turn;
+        console.log('init body: ', body);
         localStorage.setItem('sessionId', this.sessionId);
       });
+
+      this.client.subscribe('/room/api/gaming', (message) => {
+        const body = JSON.parse(message.body);
+        this.turn = body.turn;
+        console.log('body in gaming: ', body);
+        this.placeStone(body.x, body.y, body);
+      });
     },
-    placeStone(x, y) {
-      if (this.stones[x][y]) return;
-      this.stones[x][y] = this.turn;
-      this.arrowCheck(x, y);
+    handleClick(x, y) {
+      if (this.stones[x][y] || this.color !== this.turn) return;
+
       const payload = {
         x,
         y,
+        sessionId: this.sessionId,
+        color: this.color,
+        turn: this.turn,
       };
+
+      console.log('payload: ', payload);
+      this.stones[x][y] = this.color;
 
       this.client.publish({
         destination: '/app/api/coordinate',
         body: JSON.stringify(payload),
         headers: { 'content-type': 'application/json' },
       });
-
-      this.turn = this.turn === 'black' ? 'white' : 'black';
+    },
+    placeStone(x, y, body) {
+      const $board = document.querySelector('.board');
+      if (this.stones[x][y]) return;
+      if (this.color !== body.turn) {
+        $board.style.pointerEvents = 'none';
+      } else {
+        $board.style.pointerEvents = 'auto';
+      }
+      this.stones[x][y] = body.color;
+      this.arrowCheck(x, y);
     },
     isBoard(x, y) {
       return x < 0 || x >= 15 || y < 0 || y >= 15;
