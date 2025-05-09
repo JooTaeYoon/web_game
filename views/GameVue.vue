@@ -1,6 +1,8 @@
 <template>
   <div class="body">
     <h1>오목 Game</h1>
+    <p>나의 돌 색은 : {{ this.color }}</p>
+    <p>현재 : {{ this.turn }}</p>
     <div class="board">
       <div
         class="vline"
@@ -39,6 +41,11 @@
         ></div>
       </template>
     </div>
+    <WinnerModalVue
+      @close="showModal = false"
+      v-show="showModal"
+      :win="winner"
+    ></WinnerModalVue>
   </div>
 </template>
 
@@ -47,7 +54,11 @@
 import SockJs from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
+import WinnerModalVue from './WinnerModal.vue';
+
 export default {
+  components: { WinnerModalVue },
+
   data() {
     return {
       stones: Array(15)
@@ -57,6 +68,8 @@ export default {
       turn: 'black',
       sessionId: '',
       color: '',
+      showModal: false,
+      winner: '',
     };
   },
   mounted() {
@@ -87,17 +100,17 @@ export default {
         this.sessionId = body.sessionId;
         this.color = body.color;
         this.turn = body.turn;
-        console.log('init body: ', body);
+        console.log(body);
         localStorage.setItem('sessionId', this.sessionId);
       });
 
       this.client.subscribe('/room/api/gaming', (message) => {
         const body = JSON.parse(message.body);
         this.turn = body.turn;
-        console.log('body in gaming: ', body);
         this.placeStone(body.x, body.y, body);
       });
     },
+
     handleClick(x, y) {
       if (this.stones[x][y] || this.color !== this.turn) return;
 
@@ -109,8 +122,8 @@ export default {
         turn: this.turn,
       };
 
-      console.log('payload: ', payload);
       this.stones[x][y] = this.color;
+      this.arrowCheck(x, y);
 
       this.client.publish({
         destination: '/app/api/coordinate',
@@ -158,6 +171,8 @@ export default {
       for (const [i, j] of direction) {
         count = 1 + this.winCheck(x, y, i, j) + this.winCheck(x, y, -i, -j);
         if (count >= 5) {
+          this.winner = this.turn;
+          this.showModal = true;
           console.log('win');
         }
       }
@@ -185,6 +200,7 @@ export default {
   align-items: center;
 }
 .board {
+  position: relative;
   margin-top: 20px;
   display: grid;
   grid-template-columns: repeat(15, 1fr);
