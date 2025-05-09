@@ -11,5 +11,7 @@ public class OmokDto {
 
     private int x;
     private int y;
-
+    private String sessionId;
+    private String color;
+    private String turn;
 }

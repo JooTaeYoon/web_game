@@ -15,6 +15,9 @@ public class SessionManager {
     private final Set<String> sessionIds = ConcurrentHashMap.newKeySet();
     private final Map<String, Long> sessionMap = new ConcurrentHashMap<>();
     private final List<String> sessionList = new CopyOnWriteArrayList<>();
+    private final Map<String, String> turnMap = new ConcurrentHashMap<>(); // sessionId -> color
+    private final Map<String, String> colorMap = new ConcurrentHashMap<>(); // sessionId -> color
+
 
     public void add(String sessionId) {
 //        sessionIds.add(sessionId);
@@ -36,19 +39,44 @@ public class SessionManager {
     }
      */
 
-    public Map<String, String> isFirst(String sessionId) {
-         String color = sessionList.indexOf(sessionId)%2 ==0 ? "black": "white";
-         log.info("sessionList : {}",sessionList.indexOf(sessionId)%2);
-         log.info("listSize: {}",sessionList.size());
+    public Map<String, String> isFirst(String uuid) {
+        Map<String, String> map = new HashMap<>();
 
-         Map<String, String> map = new HashMap<>();
-         map.put("color", color);
-         map.put("sessionId", sessionId);
-         return map;
+        if (sessionList.contains(uuid)) {
+            sessionList.remove(uuid);
+        }
+
+        sessionList.add(uuid);
+
+        String color = sessionList.indexOf(uuid) % 2 == 0 ? "black" : "white";
+
+        log.info("color => {}", color);
+
+        colorMap.put(uuid, color);
+        if (!turnMap.containsKey("currentTurn")) {
+            turnMap.put("currentTurn", "black"); // 처음엔 항상 black부터
+        }
+
+        map.put("color", color);
+        map.put("turn", turnMap.get("currentTurn"));
+        map.put("sessionId", uuid);
+
+        log.info("MAP : {}", map);
+        return map;
     }
 
-    public List<String> getAllExcept(String sessionId) {
-        return sessionList.stream().filter(id -> !id.equals(sessionId)).collect(Collectors.toUnmodifiableList());
+    public void switchTurn() {
+        String current = turnMap.get("currentTurn");
+        String next = current.equals("black") ? "white" : "black";
+
+        turnMap.put("currentTurn", next);
     }
 
+    public String getCurrentTurn() {
+        return turnMap.get("currentTurn");
+    }
+
+    public String getAllExcept(String sessionId) {
+        return sessionList.stream().filter(id -> !id.equals(sessionId)).toList().toString();
+    }
 }

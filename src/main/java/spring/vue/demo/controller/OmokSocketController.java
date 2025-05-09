@@ -12,7 +12,9 @@ import spring.vue.demo.config.SessionManager;
 import spring.vue.demo.dto.OmokDto;
 import spring.vue.demo.dto.SettingDto;
 
+import java.security.Principal;
 import java.util.Map;
+import java.util.UUID;
 
 @Controller
 @Slf4j
@@ -22,7 +24,6 @@ public class OmokSocketController {
     private final SimpMessagingTemplate simpMessagingTemplate;
 
 
-
     public OmokSocketController(SessionManager sessionManager, SimpMessagingTemplate simpMessagingTemplate) {
         this.sessionManager = sessionManager;
         this.simpMessagingTemplate = simpMessagingTemplate;
@@ -30,22 +31,22 @@ public class OmokSocketController {
 
 
     @MessageMapping("/api/coordinate")
-    public void coordinate(@RequestBody OmokDto omokDto,SimpMessageHeaderAccessor accessor) {
-        log.info("{} ", omokDto);
-        log.info("{} ", accessor);
+    public void coordinate(@RequestBody OmokDto omokDto, SimpMessageHeaderAccessor accessor) {
+        sessionManager.switchTurn();
 
+        // 턴 정보 추가해서 전달
+        omokDto.setTurn(sessionManager.getCurrentTurn());
+//        simpMessagingTemplate.convertAndSend("/room/api/gaming", omokDto);
+        simpMessagingTemplate.convertAndSend("/room/api/gaming", omokDto);
     }
 
     @MessageMapping("/api/init")
-    public void init(SimpMessageHeaderAccessor accessor) {
-        SettingDto settingDto = new SettingDto();
-        String sessionId = accessor.getSessionId();
-        settingDto.setSessionId(sessionId);
-        Map<String , String> map = sessionManager.isFirst(sessionId);
-
-        simpMessagingTemplate.convertAndSend("/room/api/subscribe", map);
-
-        log.info("sessionId : {}", map);
+    public void init(SimpMessageHeaderAccessor accessor, Principal principal) {
+        String sessionId = principal.getName();
+//        String sessionId = UUID.randomUUID().toString();
+//        String sessionId = accessor.getSessionId();
+        Map<String, String> map = sessionManager.isFirst(sessionId);
+//        simpMessagingTemplate.convertAndSend("/room/api/init", map);
+        simpMessagingTemplate.convertAndSendToUser(sessionId, "/room/api/init", map);
     }
-
 }
