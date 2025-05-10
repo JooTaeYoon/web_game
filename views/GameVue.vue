@@ -73,7 +73,8 @@ export default {
     };
   },
   mounted() {
-    const socket = new SockJs('http://localhost:8080/ws');
+    const backendURL = process.env.VUE_APP_BACKEND_URL;
+    const socket = new SockJs(`${backendURL}`);
     this.client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 1000,
