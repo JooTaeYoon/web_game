@@ -27,15 +27,15 @@ dependencies {
 //	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
-	implementation 'mysql:mysql-connector-java:8.0.33'
+//	implementation 'mysql:mysql-connector-java:8.0.33'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 //	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	runtimeOnly 'mysql:mysql-connector-java'
-	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
+//	runtimeOnly 'mysql:mysql-connector-java'
+//	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
 
 //	jwt 0.11버전 라이브러리 추가
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'

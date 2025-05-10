@@ -52,7 +52,6 @@ public class SessionManager {
 
         log.info("color => {}", color);
 
-        colorMap.put(uuid, color);
         if (!turnMap.containsKey("currentTurn")) {
             turnMap.put("currentTurn", "black"); // 처음엔 항상 black부터
         }
