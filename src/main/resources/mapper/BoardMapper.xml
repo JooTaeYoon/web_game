@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="spring.vue.demo.mapper.BoardMapper">
+
+    <select id="boardList" resultType="spring.vue.demo.dto.BoardDto">
+        SELECT * FROM
+        BOARD
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+
+    <select id="sumBoard" resultType="int">
+        SELECT COUNT(*) FROM BOARD
+    </select>
+
+    <insert id="save" parameterType="spring.vue.demo.dto.BoardDto">
+        INSERT INTO BOARD (content, title, writer) VALUES(#{content}, #{title} , #{writer})
+    </insert>
+
+    <select id="read" resultType="spring.vue.demo.dto.BoardDto">
+        SELECT * FROM BOARD
+    </select>
+
+    <select id="getOne" resultType="spring.vue.demo.dto.BoardDto" parameterType="long">
+        SELECT * FROM BOARD WHERE id = #{id}
+    </select>
+
+    <delete id="deleteBoard" parameterType="long">
+        DELETE FROM BOARD WHERE id = #{id}
+    </delete>
+
+    <update id="update" parameterType="spring.vue.demo.dto.BoardDto">
+        UPDATE BOARD SET content = #{content}, title = #{title}, writer = #{writer} WHERE id = #{id}
+    </update>
+
+
+</mapper>
